@@ -6,27 +6,29 @@
 
 static void gpio_setup(void) {
 
-	rcc_periph_clock_enable(RCC_GPIOA);
-	gpio_mode_setup(GPIOA, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO5);
+    rcc_periph_clock_enable(RCC_GPIOA);
+    gpio_mode_setup(GPIOA, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO5);
 
 }
 
 
 int main(void) {
 
-	int i;
+    int i;
 
     gpio_setup();
 
-	while (1) {
+    while (1) {
 
-		gpio_toggle(GPIOA, GPIO5);
-		for (i = 0; i < 1000000; i++) {
-			__asm__("nop");
-		}
+        gpio_toggle(GPIOA, GPIO5);
 
-	}
+        for (i = 0; i < 1000000; i++) {
+            __asm__("nop");
+        }
 
-	return 0;
+    }
+
+    return 0;
 
 }
+
