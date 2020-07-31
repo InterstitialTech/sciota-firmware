@@ -4,11 +4,11 @@ BUILD_DIR = bin
 
 CFILES += $(SRC_DIR)/main.c
 
-DEVICE = stm32f446re
+DEVICE = stm32l152re
 
 # Open OCD stuff
 OOCD_INTERFACE = stlink-v2
-OOCD_TARGET = stm32f4x
+OOCD_TARGET = stm32l1
 
 OPENCM3_DIR = ${HOME}/software/libopencm3
 

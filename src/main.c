@@ -1,5 +1,5 @@
 // adapted from libopencm3-examples/examples/stm32/f4/nucleo-f411re/blink/blink.c
-// LED on this board (nucleo-f446re) is PA5
+// LED on this board (STM32 Nucleo) is PA5
 
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/gpio.h>
