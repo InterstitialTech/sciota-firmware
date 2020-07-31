@@ -3,9 +3,6 @@ SRC_DIR = src
 BUILD_DIR = bin
 
 CFILES += $(SRC_DIR)/main.c
-CFILES += $(SRC_DIR)/api.c
-
-AFILES += $(SRC_DIR)/api-asm.S
 
 DEVICE = stm32f446re
 
