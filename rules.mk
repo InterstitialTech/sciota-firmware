@@ -43,7 +43,7 @@ NULL	:= 2>/dev/null
 endif
 
 # Tool paths.
-PREFIX	?= arm-none-eabi-
+PREFIX ?= arm-none-eabi-
 CC	= $(PREFIX)gcc
 LD	= $(PREFIX)gcc
 OBJCOPY	= $(PREFIX)objcopy
@@ -82,6 +82,7 @@ TGT_LDFLAGS += -T$(LDSCRIPT) -L$(OPENCM3_DIR)/lib -nostartfiles
 TGT_LDFLAGS += $(ARCH_FLAGS)
 TGT_LDFLAGS += -specs=nano.specs
 TGT_LDFLAGS += -Wl,--gc-sections
+TGT_LDFLAGS += -lc -u _printf_float
 # OPTIONAL
 #TGT_LDFLAGS += -Wl,-Map=$(PROJECT).map
 ifeq ($(V),99)
