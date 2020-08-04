@@ -3,6 +3,12 @@ SRC_DIR = src
 BUILD_DIR = bin
 
 CFILES += $(SRC_DIR)/main.c
+CFILES += $(SRC_DIR)/leds.c
+CFILES += $(SRC_DIR)/serial.c
+CFILES += $(SRC_DIR)/thermometer.c
+CFILES += $(SRC_DIR)/modem.c
+
+INCLUDES += -I include
 
 DEVICE = stm32l152re
 

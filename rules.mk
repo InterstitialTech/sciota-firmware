@@ -55,6 +55,7 @@ OPENCM3_INC = $(OPENCM3_DIR)/include
 # Inclusion of library header files
 INCLUDES += $(patsubst %,-I%, . $(OPENCM3_INC) )
 
+
 OBJS = $(CFILES:%.c=$(BUILD_DIR)/%.o)
 OBJS += $(AFILES:%.S=$(BUILD_DIR)/%.o)
 GENERATED_BINS = $(PROJECT).elf $(PROJECT).bin $(PROJECT).map $(PROJECT).list $(PROJECT).lss
