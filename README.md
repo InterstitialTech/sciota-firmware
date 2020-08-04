@@ -1,12 +1,6 @@
-# blinky-libopencm3
+# sciota-firmware
 
-a simple blinky script using libopencm3.
-
-(adapted from libopencm3-template and libopencm3-examples)
-
-## Note 
-in Makefile, you probably want to edit DEVICE, OOCD_TARGET/INTERFACE, and
-OPENCM3_DIR for your particular device and build system.
+microcontroller firmware for the Sciota IoT device
 
 ## Build + Flash
 ```
