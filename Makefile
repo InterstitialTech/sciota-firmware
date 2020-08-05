@@ -7,6 +7,7 @@ CFILES += $(SRC_DIR)/leds.c
 CFILES += $(SRC_DIR)/serial.c
 CFILES += $(SRC_DIR)/thermometer.c
 CFILES += $(SRC_DIR)/modem.c
+CFILES += $(SRC_DIR)/millis.c
 
 INCLUDES += -I include
 

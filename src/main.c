@@ -6,6 +6,9 @@
 #include "serial.h"
 #include "thermometer.h"
 #include "modem.h"
+#include "millis.h"
+
+////
 
 static void main_setup(void) {
 
@@ -19,6 +22,7 @@ int main(void) {
     float temp;
 
     main_setup();
+    millis_setup();
     leds_setup();
     serial_setup();
     thermometer_setup();
@@ -43,6 +47,9 @@ int main(void) {
         // read temp
         temp = thermometer_read();
         printf("temperature: %.3f\n", temp);
+
+        // read time
+        printf("millis: %d\n", (int) millis());
 
         // query modem
         modem_get_imei();
