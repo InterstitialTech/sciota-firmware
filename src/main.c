@@ -26,6 +26,8 @@ int main(void) {
 
     setbuf(stdout, NULL);   // optional
 
+    modem_init();
+
     while (1) {
 
         // blink the LED
@@ -41,9 +43,6 @@ int main(void) {
         // read temp
         temp = thermometer_read();
         printf("temperature: %.3f\n", temp);
-
-        // ping the modem
-        modem_init();
 
     }
 

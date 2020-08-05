@@ -4,7 +4,9 @@
 
 #include "modem.h"
 
-static void _send_string(char*);
+static void _send_command(const char*);
+static bool _confirm_response(const char*);
+static bool _send_confirm(const char*, const char*);
 
 void modem_setup(void) {
 
@@ -26,16 +28,56 @@ void modem_setup(void) {
 
 void modem_init(void) {
 
-    _send_string("AT\r\n");
+    _send_confirm("ATE0", "OK");    // disable echo
 
 }
 
-static void _send_string(char *string) {
 
-    while (*string) {
-        usart_send_blocking(USART2, *string);
-        string++;
+//// static functions
+
+
+static void _send_command(const char *cmd) {
+
+    // this handles \r's and \n', no need to include them in the argument
+    // TODO: flush usart buffers?
+
+    while (*cmd) {
+        usart_send_blocking(USART2, *cmd);
+        cmd++;
     }
+
+    usart_send_blocking(USART2, '\r');
+    usart_send_blocking(USART2, '\n');
+
+}
+
+static bool _confirm_response(const char *resp) {
+
+    // this handles \r's and \n', no need to include them in the argument
+    // TODO: flush usart buffers?
+
+    if(usart_recv_blocking(USART2) != '\r') return false;
+    if(usart_recv_blocking(USART2) != '\n') return false;
+
+    while (*resp) {
+        if(usart_recv_blocking(USART2) != *resp) return false;
+        resp++;
+    }
+
+    if(usart_recv_blocking(USART2) != '\r') return false;
+    if(usart_recv_blocking(USART2) != '\n') return false;
+
+    return true;
+
+}
+
+static bool _send_confirm(const char *cmd, const char *resp) {
+
+    // (convenience function)
+
+    _send_command(cmd);
+
+    return _confirm_response(resp);
 
 }
 
