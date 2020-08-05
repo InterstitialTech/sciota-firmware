@@ -105,13 +105,27 @@ void modem_reset(void) {
 
 }
 
+void modem_get_imei(void) {
+
+    _send_command("AT+GSN");
+    // TODO recv
+
+}
+
+void modem_get_rssi(void) {
+
+    _send_command("AT+CSQ");
+    // TODO recv
+
+}
+
 
 //// static functions
 
 
 static void _send_command(const char *cmd) {
 
-    // this handles \r's and \n', no need to include them in the argument
+    // handles \r and \n, no need to include them in the argument
     // TODO: flush usart buffers?
 
     while (*cmd) {
@@ -126,7 +140,7 @@ static void _send_command(const char *cmd) {
 
 static bool _confirm_response(const char *resp) {
 
-    // this handles \r's and \n', no need to include them in the argument
+    // handles \r and \n, no need to include them in the argument
     // TODO: flush usart buffers?
 
     if(usart_recv_blocking(USART2) != '\r') return false;

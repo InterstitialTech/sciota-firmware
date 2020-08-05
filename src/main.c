@@ -44,6 +44,9 @@ int main(void) {
         temp = thermometer_read();
         printf("temperature: %.3f\n", temp);
 
+        // query modem
+        modem_get_imei();
+
     }
 
     return 0;
