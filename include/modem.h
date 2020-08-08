@@ -1,8 +1,11 @@
 #ifndef MODEM_H
 #define MODEM_H
 
+#define MODEM_CTO_MS 100 // character timeout in ms
+
 void modem_setup(void);
 void modem_init(void);
+bool modem_wait_until_ready(uint64_t);
 
 void modem_power_up(void);
 void modem_power_down(void);

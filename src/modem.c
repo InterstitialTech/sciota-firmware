@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/usart.h>
@@ -6,8 +8,9 @@
 #include "millis.h"
 
 static void _send_command(const char*);
-static bool _confirm_response(const char*);
-static bool _send_confirm(const char*, const char*);
+static bool _wait_for_char(const char, uint64_t);
+static bool _confirm_response(const char*, uint64_t);
+static bool _send_confirm(const char*, const char*, uint64_t);
 
 void modem_setup(void) {
 
@@ -43,13 +46,29 @@ void modem_init(void) {
     gpio_set(GPIOA, GPIO8);     // NRESET high
     gpio_clear(GPIOA, GPIO9);   // DTR low
 
-    // if we just powered up (or reset), then we need to wait some time before
-    // the modem becomes responsive. for now, just wait about 5 seconds
-    // TODO: switch over to a while loop with timeouts
-    millis_delay(5000);
+    modem_reset();
 
-    _send_confirm("ATE0", "OK");    // disable echo
+    // need to wait some after reset before the modem becomes responsive
+    modem_wait_until_ready(5000);
 
+    _send_confirm("ATE0", "OK", 100);    // disable echo
+
+}
+
+bool modem_wait_until_ready(uint64_t timeout) {
+
+    // ideally we would just poll the STATUS line, but it is not broken out
+    // so instead we send query ATE0 until we get a response (or timeout)
+
+    uint64_t until;
+
+    until = millis() + timeout;
+
+    while(millis() < until) {
+        if (_send_confirm("ATE0", "OK", 100)) return true;
+    }
+
+    return false;
 
 }
 
@@ -60,10 +79,7 @@ void modem_power_up(void) {
     millis_delay(100);
     gpio_set(GPIOB, GPIO10);
 
-    // ideally, we would wait until the STATUS pin goes high,
-    // but this pin is not broken out on the botletics board
-    // so for now we'll just wait (at least 4.5 seconds)
-    millis_delay(4500);
+    modem_wait_until_ready(4500);
 
 }
 
@@ -74,8 +90,7 @@ void modem_power_down(void) {
     millis_delay(1200);
     gpio_set(GPIOB, GPIO10);
 
-    // see comment in module_power_up()
-    millis_delay(6900);
+    modem_wait_until_ready(6900);
 
 }
 
@@ -95,8 +110,7 @@ void modem_get_imei(void) {
 
 }
 
-void modem_get_rssi(void) {
-
+void modem_get_rssi(void) { 
     _send_command("AT+CSQ");
     // TODO recv
 
@@ -121,33 +135,63 @@ static void _send_command(const char *cmd) {
 
 }
 
-static bool _confirm_response(const char *resp) {
+static bool _wait_for_char(const char c, uint64_t timeout) {
+
+    // block until char c is received (return true)
+    // or timeout occurs (return false)
+    // or something other than c is received (return false)
+
+    uint64_t until;
+    char r; // received
+
+    until = millis() + timeout;
+
+    while (1) {
+
+        if (millis() >= until) {
+            return false;   // timeout
+        }
+
+        if (USART_SR(USART2) & USART_SR_RXNE) {
+            r = usart_recv(USART2);
+            return r == c;
+        }
+
+    }
+
+}
+
+static bool _confirm_response(const char *resp, uint64_t timeout) {
 
     // handles \r and \n, no need to include them in the argument
+    // timeout applies to first character only,
+    // all subsequent characters subject to MODEM_CTO_MS
+
     // TODO: flush usart buffers?
 
-    if(usart_recv_blocking(USART2) != '\r') return false;
-    if(usart_recv_blocking(USART2) != '\n') return false;
+    if (!_wait_for_char('\r', timeout)) return false;
+    if (!_wait_for_char('\n', MODEM_CTO_MS)) return false;
 
     while (*resp) {
-        if(usart_recv_blocking(USART2) != *resp) return false;
+        if (!_wait_for_char(*resp, MODEM_CTO_MS)) return false;
         resp++;
     }
 
-    if(usart_recv_blocking(USART2) != '\r') return false;
-    if(usart_recv_blocking(USART2) != '\n') return false;
+    if (!_wait_for_char('\r', MODEM_CTO_MS)) return false;
+    if (!_wait_for_char('\n', MODEM_CTO_MS)) return false;
+
 
     return true;
 
 }
 
-static bool _send_confirm(const char *cmd, const char *resp) {
+static bool _send_confirm(const char *cmd, const char *resp, uint64_t timeout) {
 
-    // (convenience function)
+    // convenience function
 
     _send_command(cmd);
 
-    return _confirm_response(resp);
+    return _confirm_response(resp, timeout);
 
 }
 
