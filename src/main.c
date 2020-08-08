@@ -36,20 +36,17 @@ int main(void) {
 
         // blink the LED
         leds_green_on();
-        for (i = 0; i < 1000000; i++) {
-            __asm__("nop");
-        }
+        millis_delay(500);
         leds_green_off();
-        for (i = 0; i < 1000000; i++) {
-            __asm__("nop");
-        }
+        millis_delay(500);
 
-        // read temp
-        temp = thermometer_read();
-        printf("temperature: %.3f\n", temp);
-
-        // read time
+        // print time
         printf("millis: %d\n", (int) millis());
+
+        // print temp
+        temp = thermometer_read();
+        printf("temperature: %.3f\n\n", temp);
+
 
         // query modem
         modem_get_imei();

@@ -3,6 +3,7 @@
 #include <libopencm3/stm32/usart.h>
 
 #include "modem.h"
+#include "millis.h"
 
 static void _send_command(const char*);
 static bool _confirm_response(const char*);
@@ -42,14 +43,10 @@ void modem_init(void) {
     gpio_set(GPIOA, GPIO8);     // NRESET high
     gpio_clear(GPIOA, GPIO9);   // DTR low
 
-    modem_reset();
-
-    // need to wait some after reset before the modem becomes responsive
-    // for now, just wait about 5 seconds
+    // if we just powered up (or reset), then we need to wait some time before
+    // the modem becomes responsive. for now, just wait about 5 seconds
     // TODO: switch over to a while loop with timeouts
-    for (int i = 0; i < 20000000; i++) {
-        __asm__("nop");
-    }
+    millis_delay(5000);
 
     _send_confirm("ATE0", "OK");    // disable echo
 
@@ -58,49 +55,35 @@ void modem_init(void) {
 
 void modem_power_up(void) {
 
+    // pulse low for 100 ms
     gpio_clear(GPIOB, GPIO10);
-    // the datasheet says that a 1 second pulse is needed, but in practice,
-    // a very short pulse suffices. here's about 255 ms
-    for (int i = 0; i < 1000000; i++) {
-        __asm__("nop");
-    }
+    millis_delay(100);
     gpio_set(GPIOB, GPIO10);
 
     // ideally, we would wait until the STATUS pin goes high,
     // but this pin is not broken out on the botletics board
     // so for now we'll just wait (at least 4.5 seconds)
-    for (int i = 0; i < 18000000; i++) {
-        __asm__("nop");
-    }
+    millis_delay(4500);
 
 }
 
 void modem_power_down(void) {
 
+    // pulse low for 1200 ms
     gpio_clear(GPIOB, GPIO10);
-    // TODO: ensure this is >= 1200 ms
-    for (int i = 0; i < 5000000; i++) {
-        __asm__("nop");
-    }
+    millis_delay(1200);
     gpio_set(GPIOB, GPIO10);
 
     // see comment in module_power_up()
-    // TODO: ensure this is >= 6900 ms
-    for (int i = 0; i < 2800000; i++) {
-        __asm__("nop");
-    }
+    millis_delay(6900);
 
 }
 
 void modem_reset(void) {
 
+    // pulse high for >= 252 ms
     gpio_clear(GPIOA, GPIO8);
-
-    // TODO: ensure this is >= 252 ms
-    for (int i = 0; i < 1000000; i++) {
-        __asm__("nop");
-    }
-
+    millis_delay(260);
     gpio_set(GPIOA, GPIO8);
 
 }

@@ -39,3 +39,13 @@ uint64_t millis(void) {
 
 }
 
+void millis_delay(uint64_t duration_ms) {
+
+    uint64_t until;
+
+    until = millis() + duration_ms;
+
+    while (millis() < until);
+    
+}
+
