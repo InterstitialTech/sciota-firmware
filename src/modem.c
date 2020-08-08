@@ -38,27 +38,28 @@ void modem_setup(void) {
     gpio_mode_setup(GPIOA, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO9);    // DTR
     gpio_mode_setup(GPIOC, GPIO_MODE_INPUT, GPIO_PUPD_NONE, GPIO7);     // RI
 
-}
-
-void modem_init(void) {
-
+    // set GPIO pins
     gpio_set(GPIOB, GPIO10);  // PWRKEY high
     gpio_set(GPIOA, GPIO8);     // NRESET high
     gpio_clear(GPIOA, GPIO9);   // DTR low
 
-    modem_reset();
+}
 
-    // need to wait some after reset before the modem becomes responsive
-    modem_wait_until_ready(5000);
+bool modem_init(void) {
 
-    _send_confirm("ATE0", "OK", 100);    // disable echo
+    // disable echo
+    if (!_send_confirm("ATE0", "OK", 100)) return false;
+
+    // TODO configure modem parameters
+
+    return true;
 
 }
 
 bool modem_wait_until_ready(uint64_t timeout) {
 
     // ideally we would just poll the STATUS line, but it is not broken out
-    // so instead we send query ATE0 until we get a response (or timeout)
+    // so instead we send ATE0 until we get a response (or timeout)
 
     uint64_t until;
 

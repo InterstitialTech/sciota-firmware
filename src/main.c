@@ -27,10 +27,20 @@ int main(void) {
     serial_setup();
     thermometer_setup();
     modem_setup();
-
     setbuf(stdout, NULL);   // optional
 
-    modem_init();
+    // bring up the modem
+    modem_reset();
+    if (!modem_wait_until_ready(10000)) {
+        printf("[ERROR] modem is unresponsive\n");
+        while (1);
+    }
+    printf("[STATUS] modem up\n");
+    if (!modem_init()) {
+        printf("[ERROR] modem_init failed\n");
+        while (1);
+    }
+    printf("[STATUS] modem initialized\n");
 
     while (1) {
 
