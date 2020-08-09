@@ -66,11 +66,23 @@ int main(void) {
     }
     printf("[STATUS] IMEI: %s\n", modem_imei_str());
 
+    if (!modem_set_network_details()) {
+        printf("[ERROR] modem_set_network_details failed\n");
+        while (1);
+    }
+
+    if (!modem_get_firmware_version()) {
+        printf("[ERROR] modem_get_firmware_version failed\n");
+        while (1);
+    }
+    printf("firmware version = %s\n", (char *) modem_get_buffer());
+
+
     // main loop
 
     printf("\n[STATUS] entering main loop\n");
 
-    uint8_t rssi, ber, netstat;
+    uint8_t byte1, byte2;
 
     while (1) {
 
@@ -89,20 +101,22 @@ int main(void) {
         temp = thermometer_read();
         printf("temperature: %.3f\n", temp);
 
-        // print RSSI
-        if (!modem_get_rssi_ber(&rssi, &ber)) {
+        // now print a bunch of modem parameters
+
+        // RSSI/BER
+        if (!modem_get_rssi_ber(&byte1, &byte2)) {
             printf("[ERROR] modem_get_rssi_ber failed\n");
         } else {
-            printf("rssi = %d, ber = %d\n", rssi, ber);
+            printf("rssi = %d, ber = %d\n", byte1, byte2);
         }
 
-        // print network registration status
-        if (!modem_get_network_registration(&netstat)) {
+        // network registration status
+        if (!modem_get_network_registration(&byte1)) {
             printf("[ERROR] modem_get_network_registration failed\n");
         } else {
-            printf("Network status: %d\n", netstat);
+            printf("Registration: %d\n", byte1);
         }
-        
+
     }
 
     return 0;

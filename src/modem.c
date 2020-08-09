@@ -135,6 +135,25 @@ char *modem_imei_str(void) {
 
 }
 
+bool modem_get_firmware_version(void) {
+
+    _send_command("AT+CGMR");
+
+    if (!_get_data(24, 1000)) return false;
+    if (!_confirm_response("OK", 1000)) return false;
+
+    MODEM_BUF[MODEM_BUF_IDX++] = '\0';
+
+    return true;
+
+}
+
+uint8_t *modem_get_buffer(void) {
+
+    return MODEM_BUF;
+
+}
+
 bool modem_get_rssi_ber(uint8_t *rssi, uint8_t *ber) { 
 
     // RSSI is a encoded as a number from 0 to 31 (inclusive) representing dBm
@@ -165,12 +184,12 @@ bool modem_get_rssi_ber(uint8_t *rssi, uint8_t *ber) {
 
 bool modem_get_network_registration(uint8_t *netstat) {
 
-    _send_command("AT+CGREG?");
+    _send_command("AT+CEREG?");
 
     if (!_get_data(11, 1000)) return false;
 
     // validate message
-    if (strncmp((const char*)MODEM_BUF, "+CGREG: ", 8)) return false;
+    if (strncmp((const char*)MODEM_BUF, "+CEREG: ", 8)) return false;
     if (MODEM_BUF[9] != ',') return false;
 
     // extract data
@@ -179,6 +198,37 @@ bool modem_get_network_registration(uint8_t *netstat) {
     return true;
 
 }
+
+bool modem_set_network_details(void) {
+
+    _send_command("AT+CGDCONT=1,\"IP\",\"wireless.twilio.com\"");
+
+    // TODO validate
+
+    return true;
+
+}
+
+bool modem_get_network_system_mode(void) {
+
+    _send_command("AT+CNSMOD?");
+
+    // TODO validate and extract data
+
+    return true;
+
+}
+
+bool modem_get_functionality(uint8_t *fun) {
+
+    _send_command("AT+CFUN?");
+
+    // TODO validate and extract data
+
+    return true;
+
+}
+
 
 
 //// static functions
