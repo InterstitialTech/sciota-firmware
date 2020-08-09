@@ -12,6 +12,7 @@ void modem_power_up(void);
 void modem_power_down(void);
 void modem_reset(void);
 
+bool modem_get_network_registration(uint8_t*);
 bool modem_get_imei(void);
 char *modem_imei_str(void);
 

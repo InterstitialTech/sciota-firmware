@@ -70,7 +70,7 @@ int main(void) {
 
     printf("\n[STATUS] entering main loop\n");
 
-    uint8_t rssi, ber;
+    uint8_t rssi, ber, netstat;
 
     while (1) {
 
@@ -95,8 +95,14 @@ int main(void) {
         } else {
             printf("rssi = %d, ber = %d\n", rssi, ber);
         }
-        
 
+        // print network registration status
+        if (!modem_get_network_registration(&netstat)) {
+            printf("[ERROR] modem_get_network_registration failed\n");
+        } else {
+            printf("Network status: %d\n", netstat);
+        }
+        
     }
 
     return 0;
