@@ -220,7 +220,6 @@ static bool _wait_for_char(const char c, uint64_t timeout) {
         if (USART_SR(USART2) & USART_SR_RXNE) {
             r = usart_recv(USART2);
             return r == c;
-        } else {
         }
 
     }
