@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/gpio.h>
@@ -7,10 +8,19 @@
 #include "modem.h"
 #include "millis.h"
 
+// global buffers
+uint8_t MODEM_BUF[MODEM_BUF_SIZE];
+size_t MODEM_BUF_IDX = 0;
+char MODEM_IMEI[16];
+
+// forward declarations
 static void _send_command(const char*);
 static bool _wait_for_char(const char, uint64_t);
+static bool _get_byte(uint8_t*, uint64_t);
 static bool _confirm_response(const char*, uint64_t);
 static bool _send_confirm(const char*, const char*, uint64_t);
+static bool _get_data(size_t, uint64_t);
+static void _flush_rx(void);
 
 void modem_setup(void) {
 
@@ -80,8 +90,6 @@ void modem_power_up(void) {
     millis_delay(100);
     gpio_set(GPIOB, GPIO10);
 
-    modem_wait_until_ready(4500);
-
 }
 
 void modem_power_down(void) {
@@ -90,8 +98,6 @@ void modem_power_down(void) {
     gpio_clear(GPIOB, GPIO10);
     millis_delay(1200);
     gpio_set(GPIOB, GPIO10);
-
-    modem_wait_until_ready(6900);
 
 }
 
@@ -104,10 +110,27 @@ void modem_reset(void) {
 
 }
 
-void modem_get_imei(void) {
+bool modem_get_imei(void) {
+
+    // use this to get the IMEI from the modem via AT+GSN
+    // the result is stored in file-scope variable MODEM_IMEI
 
     _send_command("AT+GSN");
-    // TODO recv
+
+    if (!_get_data(15, 1000)) return false;
+
+    strncpy(MODEM_IMEI, (const char *) MODEM_BUF, 15);
+    MODEM_IMEI[15] = '\0';
+
+    return true;
+
+}
+
+char *modem_imei_str(void) {
+
+    // use this to access MODEM_IMEI from outside this module
+
+    return MODEM_IMEI;
 
 }
 
@@ -124,7 +147,8 @@ void modem_get_rssi(void) {
 static void _send_command(const char *cmd) {
 
     // handles \r and \n, no need to include them in the argument
-    // TODO: flush usart buffers?
+
+    _flush_rx();
 
     while (*cmd) {
         usart_send_blocking(USART2, *cmd);
@@ -156,6 +180,28 @@ static bool _wait_for_char(const char c, uint64_t timeout) {
         if (USART_SR(USART2) & USART_SR_RXNE) {
             r = usart_recv(USART2);
             return r == c;
+        } else {
+        }
+
+    }
+
+}
+
+static bool _get_byte(uint8_t *b, uint64_t timeout) {
+
+    uint64_t until;
+
+    until = millis() + timeout;
+
+    while (1) {
+
+        if (millis() >= until) {
+            return false;   // timeout
+        }
+
+        if (USART_SR(USART2) & USART_SR_RXNE) {
+            *b = usart_recv(USART2);
+            return true;
         }
 
     }
@@ -167,8 +213,6 @@ static bool _confirm_response(const char *resp, uint64_t timeout) {
     // handles \r and \n, no need to include them in the argument
     // timeout applies to first character only,
     // all subsequent characters subject to MODEM_CTO_MS
-
-    // TODO: flush usart buffers?
 
     if (!_wait_for_char('\r', timeout)) return false;
     if (!_wait_for_char('\n', MODEM_CTO_MS)) return false;
@@ -193,6 +237,38 @@ static bool _send_confirm(const char *cmd, const char *resp, uint64_t timeout) {
     _send_command(cmd);
 
     return _confirm_response(resp, timeout);
+
+}
+
+static bool _get_data(size_t len, uint64_t timeout) {
+
+    if (len > MODEM_BUF_SIZE) {
+        printf("[ERROR] _get_data: len is greater than MODEM_BUF_SIZE\n");
+        return false;
+    }
+
+    if (!_wait_for_char('\r', timeout)) return false;
+    if (!_wait_for_char('\n', MODEM_CTO_MS)) return false;
+
+    MODEM_BUF_IDX = 0;
+    for (size_t i=0; i<len; i++) {
+        if (!_get_byte(MODEM_BUF + MODEM_BUF_IDX++, MODEM_CTO_MS)) return false;
+    }
+
+    if (!_wait_for_char('\r', MODEM_CTO_MS)) return false;
+    if (!_wait_for_char('\n', MODEM_CTO_MS)) return false;
+
+    return true;
+
+}
+
+
+static void _flush_rx(void) {
+
+    while (USART_SR(USART2) & USART_SR_RXNE) {
+        usart_recv(USART2);
+        millis_delay(2);    // give the usart at least 1 ms to set RXNE again
+    }
 
 }
 
