@@ -70,7 +70,11 @@ int main(void) {
 
     printf("\n[STATUS] entering main loop\n");
 
+    uint8_t rssi, ber;
+
     while (1) {
+
+        printf("\n");
 
         // blink the LED
         leds_green_on();
@@ -83,7 +87,15 @@ int main(void) {
 
         // print temp
         temp = thermometer_read();
-        printf("temperature: %.3f\n\n", temp);
+        printf("temperature: %.3f\n", temp);
+
+        // print RSSI
+        if (!modem_get_rssi_ber(&rssi, &ber)) {
+            printf("[ERROR] modem_get_rssi_ber failed\n");
+        } else {
+            printf("rssi = %d, ber = %d\n", rssi, ber);
+        }
+        
 
     }
 

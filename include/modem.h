@@ -15,6 +15,6 @@ void modem_reset(void);
 bool modem_get_imei(void);
 char *modem_imei_str(void);
 
-void modem_get_rssi(void);
+bool modem_get_rssi_ber(uint8_t*, uint8_t*);
 
 #endif

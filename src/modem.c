@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <libopencm3/stm32/rcc.h>
@@ -134,9 +135,31 @@ char *modem_imei_str(void) {
 
 }
 
-void modem_get_rssi(void) { 
+bool modem_get_rssi_ber(uint8_t *rssi, uint8_t *ber) { 
+
+    // RSSI is a encoded as a number from 0 to 31 (inclusive) representing dBm
+    // from -115 to -52.
+    // BER (bit error rate) is encoded as a number from 0 to 7 (inclusive),
+    // representing "RxQual" (https://en.wikipedia.org/wiki/Rxqual).
+    // Both values will rail to 99 if they are "not known or detectable".
+    // We return these numbers as a uint8_t's via the output parameters
+
+    uint8_t result;
+
     _send_command("AT+CSQ");
-    // TODO recv
+
+    if (!_get_data(11, 1000)) return false;
+    MODEM_BUF[MODEM_BUF_IDX++] = '\0';  // add null termination for strtol()
+
+    // validate message
+    if (strncmp((const char*)MODEM_BUF, "+CSQ:", 5)) return false;
+    if (MODEM_BUF[8] != ',') return false;
+
+    // extract data
+    *rssi = strtol((const char*) (MODEM_BUF + 5), NULL, 10);
+    *ber = strtol((const char*) (MODEM_BUF + 9), NULL, 10);
+
+    return true;
 
 }
 
@@ -208,6 +231,28 @@ static bool _get_byte(uint8_t *b, uint64_t timeout) {
 
 }
 
+static bool _get_data(size_t len, uint64_t timeout) {
+
+    if (len > MODEM_BUF_SIZE) {
+        printf("[ERROR] _get_data: len is greater than MODEM_BUF_SIZE\n");
+        return false;
+    }
+
+    if (!_wait_for_char('\r', timeout)) return false;
+    if (!_wait_for_char('\n', MODEM_CTO_MS)) return false;
+
+    MODEM_BUF_IDX = 0;
+    for (size_t i=0; i<len; i++) {
+        if (!_get_byte(MODEM_BUF + MODEM_BUF_IDX++, MODEM_CTO_MS)) return false;
+    }
+
+    if (!_wait_for_char('\r', MODEM_CTO_MS)) return false;
+    if (!_wait_for_char('\n', MODEM_CTO_MS)) return false;
+
+    return true;
+
+}
+
 static bool _confirm_response(const char *resp, uint64_t timeout) {
 
     // handles \r and \n, no need to include them in the argument
@@ -239,29 +284,6 @@ static bool _send_confirm(const char *cmd, const char *resp, uint64_t timeout) {
     return _confirm_response(resp, timeout);
 
 }
-
-static bool _get_data(size_t len, uint64_t timeout) {
-
-    if (len > MODEM_BUF_SIZE) {
-        printf("[ERROR] _get_data: len is greater than MODEM_BUF_SIZE\n");
-        return false;
-    }
-
-    if (!_wait_for_char('\r', timeout)) return false;
-    if (!_wait_for_char('\n', MODEM_CTO_MS)) return false;
-
-    MODEM_BUF_IDX = 0;
-    for (size_t i=0; i<len; i++) {
-        if (!_get_byte(MODEM_BUF + MODEM_BUF_IDX++, MODEM_CTO_MS)) return false;
-    }
-
-    if (!_wait_for_char('\r', MODEM_CTO_MS)) return false;
-    if (!_wait_for_char('\n', MODEM_CTO_MS)) return false;
-
-    return true;
-
-}
-
 
 static void _flush_rx(void) {
 
