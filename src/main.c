@@ -45,6 +45,7 @@ int main(void) {
 
     printf("\n[STATUS] sciota is risen\n");
 
+
     // bring up the modem
 
     modem_reset();
@@ -72,11 +73,23 @@ int main(void) {
     }
     printf("[STATUS] GPS is up\n");
 
+    if (!modem_set_network_details()) {
+        printf("[ERROR] modem_set_network_details failed\n");
+        while (1);
+    }
+
+    if (!modem_get_firmware_version()) {
+        printf("[ERROR] modem_get_firmware_version failed\n");
+        while (1);
+    }
+    printf("firmware version = %s\n", (char *) modem_get_buffer());
+
+
     // main loop
 
     printf("\n[STATUS] entering main loop\n");
 
-    uint8_t rssi, ber, netstat;
+    uint8_t byte1, byte2;
 
     while (1) {
 
@@ -95,18 +108,20 @@ int main(void) {
         temp = thermometer_read();
         printf("Temp (C): %.3f\n", temp);
 
-        // print RSSI
-        if (!modem_get_rssi_ber(&rssi, &ber)) {
+        // now print a bunch of modem parameters
+
+        // RSSI/BER
+        if (!modem_get_rssi_ber(&byte1, &byte2)) {
             printf("[ERROR] modem_get_rssi_ber failed\n");
         } else {
-            printf("RSSI = %d, BER = %d\n", rssi, ber);
+            printf("RSSI = %d, BER = %d\n", byte1, byte2);
         }
 
-        // print network registration status
-        if (!modem_get_network_registration(&netstat)) {
+        // network registration status
+        if (!modem_get_network_registration(&byte1)) {
             printf("[ERROR] modem_get_network_registration failed\n");
         } else {
-            printf("Network status: %d\n", netstat);
+            printf("Network Registration Status: %d\n", byte1);
         }
 
         // GPS test
@@ -116,7 +131,20 @@ int main(void) {
             printf("GPS: %s\n", (char*) modem_get_buffer());
         }
         
-        
+        // functionality
+        if (!modem_get_functionality(&byte1)) {
+            printf("[ERROR] modem_get_functionality failed\n");
+        } else {
+            printf("Modem Functionality: %d\n", byte1);
+        }
+
+        // network system mode
+        if (!modem_get_network_system_mode(&byte1)) {
+            printf("[ERROR] modem_get_network_system_mode failed\n");
+        } else {
+            printf("Network System Mode: %d\n", byte1);
+        }
+
     }
 
     return 0;
