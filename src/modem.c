@@ -269,6 +269,16 @@ bool modem_get_functionality(uint8_t *status) {
 
 }
 
+bool modem_get_available_networks(void) {
+
+    // after calling, retrieve the result with modem_get_buffer();
+
+    _send_command("AT+COPS=?");
+    _get_variable_length_response(5000);
+
+    return _confirm_response("OK", 1000);
+
+}
 
 
 //// GPS

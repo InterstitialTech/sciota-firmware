@@ -151,6 +151,13 @@ int main(void) {
             printf("Network System Mode: %d\n", byte1);
         }
 
+        // available networks
+        if (!modem_get_available_networks()) {
+            printf("[ERROR] modem_get_available_networks failed\n");
+        } else {
+            printf("Available Networks: %s\n", (char*) modem_get_buffer());
+        }
+
     }
 
     return 0;
