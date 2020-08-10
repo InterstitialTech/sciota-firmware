@@ -66,6 +66,12 @@ int main(void) {
     }
     printf("[STATUS] IMEI: %s\n", modem_imei_str());
 
+    if (!modem_gps_enable()) {
+        printf("[ERROR] modem_gps_enable failed\n");
+        while (1);
+    }
+    printf("[STATUS] GPS is up\n");
+
     // main loop
 
     printf("\n[STATUS] entering main loop\n");
@@ -83,17 +89,17 @@ int main(void) {
         millis_delay(500);
 
         // print time
-        printf("millis: %d\n", (int) millis());
+        printf("Time (s): %.3f\n", millis()/1000.);
 
         // print temp
         temp = thermometer_read();
-        printf("temperature: %.3f\n", temp);
+        printf("Temp (C): %.3f\n", temp);
 
         // print RSSI
         if (!modem_get_rssi_ber(&rssi, &ber)) {
             printf("[ERROR] modem_get_rssi_ber failed\n");
         } else {
-            printf("rssi = %d, ber = %d\n", rssi, ber);
+            printf("RSSI = %d, BER = %d\n", rssi, ber);
         }
 
         // print network registration status
@@ -102,6 +108,14 @@ int main(void) {
         } else {
             printf("Network status: %d\n", netstat);
         }
+
+        // GPS test
+        if (!modem_gps_get_nav()) {
+            printf("[ERROR] modem_gps_get_location failed\n");
+        } else {
+            printf("GPS: %s\n", (char*) modem_get_buffer());
+        }
+        
         
     }
 

@@ -21,6 +21,7 @@ static bool _get_byte(uint8_t*, uint64_t);
 static bool _confirm_response(const char*, uint64_t);
 static bool _send_confirm(const char*, const char*, uint64_t);
 static bool _get_data(size_t, uint64_t);
+static bool _get_variable_length_response(uint64_t);
 static void _flush_rx(void);
 
 void modem_setup(void) {
@@ -135,6 +136,12 @@ char *modem_imei_str(void) {
 
 }
 
+uint8_t *modem_get_buffer(void) {
+
+    return MODEM_BUF;
+
+}
+
 bool modem_get_rssi_ber(uint8_t *rssi, uint8_t *ber) { 
 
     // RSSI is a encoded as a number from 0 to 31 (inclusive) representing dBm
@@ -150,6 +157,8 @@ bool modem_get_rssi_ber(uint8_t *rssi, uint8_t *ber) {
 
     if (!_get_data(11, 1000)) return false;
     MODEM_BUF[MODEM_BUF_IDX++] = '\0';  // add null termination for strtol()
+
+    if (!_confirm_response("OK", 1000)) return false;
 
     // validate message
     if (strncmp((const char*)MODEM_BUF, "+CSQ:", 5)) return false;
@@ -168,6 +177,7 @@ bool modem_get_network_registration(uint8_t *netstat) {
     _send_command("AT+CGREG?");
 
     if (!_get_data(11, 1000)) return false;
+    if (!_confirm_response("OK", 1000)) return false;
 
     // validate message
     if (strncmp((const char*)MODEM_BUF, "+CGREG: ", 8)) return false;
@@ -178,6 +188,30 @@ bool modem_get_network_registration(uint8_t *netstat) {
 
     return true;
 
+}
+
+
+//// GPS
+
+
+bool modem_gps_enable(void) {
+
+    _send_confirm("AT+CGNSPWR=1", "OK", 1000);
+    _send_confirm("AT+CGNSCFG=1", "OK", 1000);
+    return _send_confirm("AT+CGNSTST=1", "OK", 1000);
+
+}
+
+bool modem_gps_get_nav(void) {
+
+    // upon success, nav info is stored in MODEM_BUF
+
+    _send_command("AT+CGNSINF");    // nav info parsed from NMEA sentence
+
+    if (!_get_variable_length_response(1000)) return false;
+    if (!_confirm_response("OK", 1000)) return false;
+
+    return true;
 }
 
 
@@ -264,6 +298,38 @@ static bool _get_data(size_t len, uint64_t timeout) {
 
     if (!_wait_for_char('\r', MODEM_CTO_MS)) return false;
     if (!_wait_for_char('\n', MODEM_CTO_MS)) return false;
+
+    return true;
+
+}
+
+static bool _get_variable_length_response(uint64_t timeout) {
+
+    uint8_t byte;
+
+    if (!_wait_for_char('\r', timeout)) return false;
+    if (!_wait_for_char('\n', MODEM_CTO_MS)) return false;
+
+    MODEM_BUF_IDX = 0;
+    while (1) {
+
+        if (!_get_byte(&byte, MODEM_CTO_MS)) return false;
+
+        if (byte == '\r') {
+            if (!_get_byte(&byte, MODEM_CTO_MS)) return false;
+            if (byte == '\n') {
+                break;
+            } else {
+                return false;
+            }
+        }
+
+        MODEM_BUF[MODEM_BUF_IDX++] = byte;
+        if (MODEM_BUF_IDX == (MODEM_BUF_SIZE - 1)) break; // -1 for null term
+
+    }
+
+    MODEM_BUF[MODEM_BUF_IDX++] = '\0';  // null term
 
     return true;
 

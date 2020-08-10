@@ -15,7 +15,11 @@ void modem_reset(void);
 bool modem_get_network_registration(uint8_t*);
 bool modem_get_imei(void);
 char *modem_imei_str(void);
+uint8_t *modem_get_buffer(void);
 
 bool modem_get_rssi_ber(uint8_t*, uint8_t*);
+
+bool modem_gps_enable(void);
+bool modem_gps_get_nav(void);
 
 #endif
