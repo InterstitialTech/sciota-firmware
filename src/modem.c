@@ -184,12 +184,12 @@ bool modem_get_rssi_ber(uint8_t *rssi, uint8_t *ber) {
 
 bool modem_get_network_registration(uint8_t *netstat) {
 
-    _send_command("AT+CEREG?");
+    _send_command("AT+CGREG?");
 
     if (!_get_data(11, 1000)) return false;
 
     // validate message
-    if (strncmp((const char*)MODEM_BUF, "+CEREG: ", 8)) return false;
+    if (strncmp((const char*)MODEM_BUF, "+CGREG: ", 8)) return false;
     if (MODEM_BUF[9] != ',') return false;
 
     // extract data
