@@ -67,6 +67,12 @@ int main(void) {
     }
     printf("[STATUS] IMEI: %s\n", modem_imei_str());
 
+    if (!modem_get_imsi()) {
+        printf("[ERROR] modem_get_imsi failed\n");
+        while (1);
+    }
+    printf("[STATUS] IMSI: %s\n", (char*) MODEM_BUF);
+
     if (!modem_gps_enable()) {
         printf("[ERROR] modem_gps_enable failed\n");
         while (1);
@@ -82,7 +88,7 @@ int main(void) {
         printf("[ERROR] modem_get_firmware_version failed\n");
         while (1);
     }
-    printf("firmware version = %s\n", (char *) modem_get_buffer());
+    printf("firmware version = %s\n", (char*) modem_get_buffer());
 
 
     // main loop

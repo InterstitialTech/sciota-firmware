@@ -112,6 +112,19 @@ void modem_reset(void) {
 
 }
 
+bool modem_get_imsi(void) {
+
+    _send_command("AT+CIMI");
+
+    if (!_get_data(15, 1000)) return false;
+    if (!_confirm_response("OK", 1000)) return false;
+
+    MODEM_IMEI[15] = '\0';  // null term
+
+    return true;
+
+}
+
 bool modem_get_imei(void) {
 
     // use this to get the IMEI from the modem via AT+GSN
@@ -120,9 +133,10 @@ bool modem_get_imei(void) {
     _send_command("AT+GSN");
 
     if (!_get_data(15, 1000)) return false;
+    if (!_confirm_response("OK", 1000)) return false;
 
     strncpy(MODEM_IMEI, (const char *) MODEM_BUF, 15);
-    MODEM_IMEI[15] = '\0';
+    MODEM_IMEI[15] = '\0';  // null term
 
     return true;
 
@@ -205,11 +219,7 @@ bool modem_get_network_registration(uint8_t *netstat) {
 
 bool modem_set_network_details(void) {
 
-    _send_command("AT+CGDCONT=1,\"IP\",\"wireless.twilio.com\"");
-    _confirm_response("OK", 1000);
-    _confirm_response("SMS Ready", 1000);
-
-    return true;
+    return _send_confirm("AT+CGDCONT=1,\"IP\",\"wireless.twilio.com\"", "OK", 1000);
 
 }
 
@@ -266,9 +276,7 @@ bool modem_get_functionality(uint8_t *status) {
 
 bool modem_gps_enable(void) {
 
-    _send_confirm("AT+CGNSPWR=1", "OK", 1000);
-    _send_confirm("AT+CGNSCFG=1", "OK", 1000);
-    return _send_confirm("AT+CGNSTST=1", "OK", 1000);
+    return _send_confirm("AT+CGNSPWR=1", "OK", 1000);
 
 }
 
