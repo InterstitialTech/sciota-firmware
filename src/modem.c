@@ -202,8 +202,8 @@ bool modem_get_network_registration(uint8_t *netstat) {
 bool modem_set_network_details(void) {
 
     _send_command("AT+CGDCONT=1,\"IP\",\"wireless.twilio.com\"");
-
-    // TODO validate
+    _confirm_response("OK", 1000);
+    _confirm_response("SMS Ready", 1000);
 
     return true;
 
