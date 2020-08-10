@@ -14,7 +14,7 @@ void modem_reset(void);
 
 bool modem_set_network_details(void);
 bool modem_get_network_registration(uint8_t*);
-bool modem_get_network_system_mode(void);
+bool modem_get_network_system_mode(uint8_t*);
 bool modem_get_functionality(uint8_t*);
 bool modem_get_imei(void);
 bool modem_get_firmware_version(void);

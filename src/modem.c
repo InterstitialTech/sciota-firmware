@@ -209,21 +209,47 @@ bool modem_set_network_details(void) {
 
 }
 
-bool modem_get_network_system_mode(void) {
+bool modem_get_network_system_mode(uint8_t *status) {
+
+    // status =  0 (no service)
+    //           1 (GSM)
+    //           3 (EGPRS)
+    //           7 (LTE M1)
+    //           9 (LTE NB)
 
     _send_command("AT+CNSMOD?");
 
-    // TODO validate and extract data
+    if (!_get_data(12, 1000)) return false;
+    if (!_confirm_response("OK", 1000)) return false;
+
+    // validate message
+    if (strncmp((const char*)MODEM_BUF, "+CNSMOD: ", 9)) return false;
+    if (MODEM_BUF[10] != ',') return false;
+
+    *status = MODEM_BUF[11] - '0';
 
     return true;
 
 }
 
-bool modem_get_functionality(uint8_t *fun) {
+bool modem_get_functionality(uint8_t *status) {
+
+    //  status =    0 (Minimum functionality)
+    //              1 (Full functionality (Default))
+    //              4 (Disable phone both transmit and receive RF circuits)
+    //              5 (Factory Test Mode)
+    //              6 (Reset)
+    //              7 (Offline Mode)
 
     _send_command("AT+CFUN?");
 
-    // TODO validate and extract data
+    if (!_get_data(8, 1000)) return false;
+    if (!_confirm_response("OK", 1000)) return false;
+
+    // validate message
+    if (strncmp((const char*)MODEM_BUF, "+CFUN: ", 7)) return false;
+
+    *status = MODEM_BUF[7] - '0';
 
     return true;
 

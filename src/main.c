@@ -114,7 +114,21 @@ int main(void) {
         if (!modem_get_network_registration(&byte1)) {
             printf("[ERROR] modem_get_network_registration failed\n");
         } else {
-            printf("Registration: %d\n", byte1);
+            printf("Network Registration Status: %d\n", byte1);
+        }
+
+        // functionality
+        if (!modem_get_functionality(&byte1)) {
+            printf("[ERROR] modem_get_functionality failed\n");
+        } else {
+            printf("Modem Functionality: %d\n", byte1);
+        }
+
+        // test
+        if (!modem_get_network_system_mode(&byte1)) {
+            printf("[ERROR] modem_get_network_system_mode failed\n");
+        } else {
+            printf("Network System Mode: %d\n", byte1);
         }
 
     }
