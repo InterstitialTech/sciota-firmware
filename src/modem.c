@@ -219,7 +219,7 @@ bool modem_get_network_registration(uint8_t *netstat) {
 
 bool modem_set_network_details(void) {
 
-    return _send_confirm("AT+CGDCONT=1,\"IP\",\"wireless.twilio.com\"", "OK", 1000);
+    return _send_confirm("AT+CGDCONT=1,\"IP\",\"soracom.io\"", "OK", 1000);
 
 }
 
