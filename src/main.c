@@ -67,9 +67,9 @@ int main(void) {
     }
     printf("[STATUS] IMEI: %s\n", modem_imei_str());
 
-    if (!modem_get_imsi()) {
+    while (!modem_get_imsi()) {
         printf("[ERROR] modem_get_imsi failed\n");
-        while (1);
+        millis_delay(500);
     }
     printf("[STATUS] IMSI: %s\n", (char*) MODEM_BUF);
 
@@ -79,10 +79,11 @@ int main(void) {
     }
     printf("[STATUS] GPS is up\n");
 
-    if (!modem_set_network_details()) {
+    while (!modem_set_network_details()) {
         printf("[ERROR] modem_set_network_details failed\n");
-        while (1);
+        millis_delay(2000);
     }
+    printf("modem_set_network_details succeeded!\n");
 
     if (!modem_get_firmware_version()) {
         printf("[ERROR] modem_get_firmware_version failed\n");
@@ -150,6 +151,17 @@ int main(void) {
         } else {
             printf("Network System Mode: %d\n", byte1);
         }
+
+        // HTTP post
+        if (byte1 == 7) {   // if mode = LTE M1
+            if (!modem_http_post(temp)) {
+                printf("[ERROR] modem_http_post failed\n");
+            } else {
+                printf("HTTP post succeeded!\n");
+            }
+        }
+
+        millis_delay(5000);
 
     }
 

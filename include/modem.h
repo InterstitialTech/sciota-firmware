@@ -23,6 +23,8 @@ bool modem_get_firmware_version(void);
 char *modem_imei_str(void);
 uint8_t *modem_get_buffer(void);
 
+bool modem_http_post(float);
+
 bool modem_get_rssi_ber(uint8_t*, uint8_t*);
 
 bool modem_gps_enable(void);

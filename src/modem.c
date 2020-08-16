@@ -219,7 +219,16 @@ bool modem_get_network_registration(uint8_t *netstat) {
 
 bool modem_set_network_details(void) {
 
-    return _send_confirm("AT+CGDCONT=1,\"IP\",\"soracom.io\"", "OK", 1000);
+    if (!_send_confirm("AT+CGDCONT=1,\"IP\",\"soracom.io\"", "OK", 1000)) return false;
+
+    if (!_send_confirm("AT+CGATT=1", "OK", 1000)) return false;
+
+    if (!_send_confirm("AT+SAPBR=3,1,\"APN\",\"soracom.io\"", "OK", 1000)) return false;
+    if (!_send_confirm("AT+SAPBR=3,1,\"USER\",\"sora\"", "OK", 1000)) return false;
+    if (!_send_confirm("AT+SAPBR=3,1,\"PWD\",\"sora\"", "OK", 1000)) return false;
+    if (!_send_confirm("AT+SAPBR=1,1", "OK", 1000)) return false;
+
+    return true;
 
 }
 
@@ -273,10 +282,43 @@ bool modem_get_available_networks(void) {
 
     // after calling, retrieve the result with modem_get_buffer();
 
+    // NOTE: this will occasionally fail and cause the modem to shut down for
+    // 3 minutes (consistently)
+
     _send_command("AT+COPS=?");
     _get_variable_length_response(5000);
 
     return _confirm_response("OK", 1000);
+
+}
+
+bool modem_http_post(float temperature) {
+
+    char ATstring[30];
+    char payload[30];
+
+    // reset the HTTP session
+    if (!_send_confirm("AT+HTTPINIT", "OK", 1000)) return false;
+
+    // set the parameters
+    if (!_send_confirm("AT+HTTPPARA=\"CID\",1", "OK", 1000)) return false;
+    if (!_send_confirm("AT+HTTPPARA=\"URL\",\"http://demo.thingsboard.io/api/v1/K11HoE3QMPE7rSHPf3Hj/telemetry\"", "OK", 1000)) return false;
+  	if (!_send_confirm("AT+HTTPPARA=\"CONTENT\",\"application/json\"", "OK", 1000)) return false;
+
+    // prepare the data payload
+    sprintf(payload, "{\"temperature\": %.2f}", temperature);
+    sprintf(ATstring, "AT+HTTPDATA=%d,5000", strlen(payload));
+    if (!_send_confirm(ATstring, "DOWNLOAD", 5000)) return false;
+    millis_delay(100);
+    if (!_send_confirm(payload, "OK", 5000)) return false;
+
+    // send it!
+    if (!_send_confirm("AT+HTTPACTION=1", "OK", 1000)) return false;
+    if (!_confirm_response("+HTTPACTION: 1,200,0", 2000)) return false;
+
+    if (!_send_confirm("AT+HTTPTERM", "OK", 1000)) return false;
+
+    return true;
 
 }
 
