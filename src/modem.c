@@ -12,7 +12,6 @@
 // global buffers
 uint8_t MODEM_BUF[MODEM_BUF_SIZE];
 size_t MODEM_BUF_IDX = 0;
-char MODEM_IMEI[16];
 
 // forward declarations
 static void _send_command(const char*);
@@ -114,12 +113,14 @@ void modem_reset(void) {
 
 bool modem_get_imsi(void) {
 
+    // result is stored in MODEM_BUF
+
     _send_command("AT+CIMI");
 
     if (!_get_data(15, 1000)) return false;
     if (!_confirm_response("OK", 1000)) return false;
 
-    MODEM_IMEI[15] = '\0';  // null term
+    MODEM_BUF[15] = '\0';  // null term
 
     return true;
 
@@ -127,26 +128,16 @@ bool modem_get_imsi(void) {
 
 bool modem_get_imei(void) {
 
-    // use this to get the IMEI from the modem via AT+GSN
-    // the result is stored in file-scope variable MODEM_IMEI
+    // result is stored in MODEM_BUF
 
     _send_command("AT+GSN");
 
     if (!_get_data(15, 1000)) return false;
     if (!_confirm_response("OK", 1000)) return false;
 
-    strncpy(MODEM_IMEI, (const char *) MODEM_BUF, 15);
-    MODEM_IMEI[15] = '\0';  // null term
+    MODEM_BUF[15] = '\0';  // null term
 
     return true;
-
-}
-
-char *modem_imei_str(void) {
-
-    // use this to access MODEM_IMEI from outside this module
-
-    return MODEM_IMEI;
 
 }
 
@@ -157,15 +148,21 @@ bool modem_get_firmware_version(void) {
     if (!_get_data(24, 1000)) return false;
     if (!_confirm_response("OK", 1000)) return false;
 
-    MODEM_BUF[MODEM_BUF_IDX++] = '\0';
+    MODEM_BUF[24] = '\0';  // null term
 
     return true;
 
 }
 
-uint8_t *modem_get_buffer(void) {
+uint8_t *modem_get_buffer_data(void) {
 
     return MODEM_BUF;
+
+}
+
+char *modem_get_buffer_string(void) {
+
+    return (char *) MODEM_BUF;
 
 }
 
@@ -412,6 +409,9 @@ static bool _get_byte(uint8_t *b, uint64_t timeout) {
 }
 
 static bool _get_data(size_t len, uint64_t timeout) {
+
+    // does NOT add a null termination, because it could be used for binary
+    // data as well as strings
 
     if (len > MODEM_BUF_SIZE) {
         printf("[ERROR] _get_data: len is greater than MODEM_BUF_SIZE\n");

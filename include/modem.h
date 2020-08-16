@@ -21,7 +21,9 @@ bool modem_get_imsi(void);
 bool modem_get_imei(void);
 bool modem_get_firmware_version(void);
 char *modem_imei_str(void);
-uint8_t *modem_get_buffer(void);
+
+uint8_t *modem_get_buffer_data(void);
+char *modem_get_buffer_string(void);
 
 bool modem_http_post(float);
 

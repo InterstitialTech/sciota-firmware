@@ -49,47 +49,32 @@ int main(void) {
     // bring up the modem
 
     modem_reset();
-    if (!modem_wait_until_ready(10000)) {
+    while (!modem_wait_until_ready(10000)) {
         printf("[ERROR] modem is unresponsive\n");
-        while (1);
     }
-    printf("[STATUS] modem up\n");
 
-    if (!modem_init()) {
+    while (!modem_init()) {
         printf("[ERROR] modem_init failed\n");
-        while (1);
     }
-    printf("[STATUS] modem initialized\n");
 
-    if (!modem_get_imei()) {
+    while (!modem_get_imei()) {
         printf("[ERROR] modem_get_imei failed\n");
-        while (1);
     }
-    printf("[STATUS] IMEI: %s\n", modem_imei_str());
+    printf("[STATUS] IMEI: %s\n", modem_get_buffer_string());
 
     while (!modem_get_imsi()) {
         printf("[ERROR] modem_get_imsi failed\n");
-        millis_delay(500);
     }
-    printf("[STATUS] IMSI: %s\n", (char*) MODEM_BUF);
-
-    if (!modem_gps_enable()) {
-        printf("[ERROR] modem_gps_enable failed\n");
-        while (1);
-    }
-    printf("[STATUS] GPS is up\n");
+    printf("[STATUS] IMSI: %s\n", modem_get_buffer_string());
 
     while (!modem_set_network_details()) {
         printf("[ERROR] modem_set_network_details failed\n");
-        millis_delay(2000);
     }
-    printf("modem_set_network_details succeeded!\n");
 
-    if (!modem_get_firmware_version()) {
+    while (!modem_get_firmware_version()) {
         printf("[ERROR] modem_get_firmware_version failed\n");
-        while (1);
     }
-    printf("firmware version = %s\n", (char*) modem_get_buffer());
+    printf("firmware version = %s\n", modem_get_buffer_string());
 
 
     // main loop
@@ -131,13 +116,6 @@ int main(void) {
             printf("Network Registration Status: %d\n", byte1);
         }
 
-        // GPS test
-        if (!modem_gps_get_nav()) {
-            printf("[ERROR] modem_gps_get_location failed\n");
-        } else {
-            printf("GPS: %s\n", (char*) modem_get_buffer());
-        }
-        
         // functionality
         if (!modem_get_functionality(&byte1)) {
             printf("[ERROR] modem_get_functionality failed\n");
