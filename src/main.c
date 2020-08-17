@@ -8,6 +8,7 @@
 #include "thermometer.h"
 #include "modem.h"
 #include "millis.h"
+#include "ip.h"
 
 //
 
@@ -32,8 +33,6 @@ static void main_setup(void) {
 }
 
 int main(void) {
-
-    float temp;
 
     main_setup();
     millis_setup();
@@ -67,9 +66,11 @@ int main(void) {
     }
     printf("[STATUS] IMSI: %s\n", modem_get_buffer_string());
 
+    /*
     while (!modem_set_network_details()) {
         printf("[ERROR] modem_set_network_details failed\n");
     }
+    */
 
     while (!modem_get_firmware_version()) {
         printf("[ERROR] modem_get_firmware_version failed\n");
@@ -81,7 +82,8 @@ int main(void) {
 
     printf("\n[STATUS] entering main loop\n");
 
-    uint8_t byte1, byte2;
+    float temp;
+    uint8_t fun, rssi, ber, reg, mode;  // modem vitals
 
     while (1) {
 
@@ -93,50 +95,50 @@ int main(void) {
         leds_green_off();
         millis_delay(500);
 
-        // print time
+        // get the time and temperature
         printf("Time (s): %.3f\n", millis()/1000.);
-
-        // print temp
         temp = thermometer_read();
         printf("Temp (C): %.3f\n", temp);
 
-        // now print a bunch of modem parameters
-
-        // RSSI/BER
-        if (!modem_get_rssi_ber(&byte1, &byte2)) {
-            printf("[ERROR] modem_get_rssi_ber failed\n");
-        } else {
-            printf("RSSI = %d, BER = %d\n", byte1, byte2);
-        }
-
-        // network registration status
-        if (!modem_get_network_registration(&byte1)) {
-            printf("[ERROR] modem_get_network_registration failed\n");
-        } else {
-            printf("Network Registration Status: %d\n", byte1);
-        }
-
-        // functionality
-        if (!modem_get_functionality(&byte1)) {
+        // modem vitals
+        if (!modem_get_functionality(&fun)) {
             printf("[ERROR] modem_get_functionality failed\n");
         } else {
-            printf("Modem Functionality: %d\n", byte1);
+            printf("Modem Functionality: %d\n", fun);
         }
-
-        // network system mode
-        if (!modem_get_network_system_mode(&byte1)) {
+        if (!modem_get_rssi_ber(&rssi, &ber)) {
+            printf("[ERROR] modem_get_rssi_ber failed\n");
+        } else {
+            printf("RSSI = %d, BER = %d\n", rssi, ber);
+        }
+        if (!modem_get_network_registration(&reg)) {
+            printf("[ERROR] modem_get_network_registration failed\n");
+        } else {
+            printf("Network Registration Status: %d\n", reg);
+        }
+        if (!modem_get_network_system_mode(&mode)) {
             printf("[ERROR] modem_get_network_system_mode failed\n");
         } else {
-            printf("Network System Mode: %d\n", byte1);
+            printf("Network System Mode: %d\n", mode);
         }
 
-        // HTTP post
-        if (byte1 == 7) {   // if mode = LTE M1
-            if (!modem_http_post(temp)) {
+        // IP stuff
+        if ((fun==1) && (reg==5) && (mode==7)) {
+
+            while (!ip_setup1()) {
+                printf("[ERROR] IP setup error \n");
+                millis_delay(1000);
+            }
+            printf("IP setup success\n");
+
+            millis_delay(1000);
+
+            if (!ip_send1()) {
                 printf("[ERROR] modem_http_post failed\n");
             } else {
-                printf("HTTP post succeeded!\n");
+                printf("modem_http_post success\n");
             }
+
         }
 
         millis_delay(5000);
