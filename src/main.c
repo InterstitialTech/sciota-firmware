@@ -11,10 +11,6 @@
 
 //
 
-// tmp
-extern uint8_t MODEM_BUF[MODEM_BUF_SIZE];
-extern size_t MODEM_BUF_IDX;
-
 ////
 
 static void main_setup(void) {
