@@ -23,8 +23,6 @@ static bool _get_data(size_t, uint64_t);
 static bool _get_variable_length_response(uint64_t);
 static void _flush_rx(void);
 
-#include "src/ip.c"
-
 void modem_setup(void) {
 
     // enable peripheral clocks
@@ -63,7 +61,18 @@ bool modem_init(void) {
     // disable echo
     if (!_send_confirm("ATE0", "OK", 100)) return false;
 
-    // TODO configure modem parameters
+    // TODO figure out these preferred modes
+
+    // preferred mode
+    //if (!_send_confirm("AT+CNMP=2", "OK", 1000)) return false;  // automatic
+    //if (!_send_confirm("AT+CNMP=13", "OK", 1000)) return false; // GSM only
+    if (!_send_confirm("AT+CNMP=38", "OK", 1000)) return false; // LTE only
+    //if (!_send_confirm("AT+CNMP=51", "OK", 1000)) return false; // GSM and LTE only
+
+    // preferred selection between cat-m and nb-iot
+    if (!_send_confirm("AT+CMNB=1", "OK", 1000)) return false;  // cat-M
+    //if (!_send_confirm("AT+CMNB=2", "OK", 1000)) return false;  // NB-IOT
+    //if (!_send_confirm("AT+CMNB=3", "OK", 1000)) return false;  // cat-M and NB-IOT
 
     return true;
 
@@ -299,6 +308,78 @@ bool modem_gps_get_nav(void) {
 }
 
 
+//// internets
+
+
+bool modem_connect_bearer(void) {
+
+    // attach service
+    if (!_send_confirm("AT+CGATT=1", "OK", 1000)) return false;
+    if (!_send_confirm("AT+CSTT=\"soracom.io\",\"sora\",\"sora\"", "OK", 1000)) return false;
+    if (!_send_confirm("AT+CIICR", "OK", 1000)) return false;
+
+    // IP bearer
+    if (!_send_confirm("AT+SAPBR=3,1,\"APN\",\"soracom.io\"", "OK", 1000))  return false;
+    if (!_send_confirm("AT+SAPBR=3,1,\"USER\",\"sora\"", "OK", 1000)) return false;
+    if (!_send_confirm("AT+SAPBR=3,1,\"PWD\",\"sora\"", "OK", 1000)) return false;
+    if (!_send_confirm("AT+SAPBR=1,1", "OK", 1000)) return false;
+
+    // this will provide your IP address, if desired
+    //if (!_send_confirm("AT+CIFSR", "OK", 1000)) return false;
+
+    return true;
+
+}
+
+bool modem_post_temperature(float temp) {
+
+    // HTTP POST
+
+    char ATstring[30];
+    char payload[30];
+
+    if (!_send_confirm("AT+HTTPINIT", "OK", 1000)) return false;
+
+    if (!_send_confirm("AT+HTTPPARA=\"CID\",1", "OK", 1000)) return false;
+    if (!_send_confirm("AT+HTTPPARA=\"URL\",\"http://demo.thingsboard.io/api/v1/K11HoE3QMPE7rSHPf3Hj/telemetry\"", "OK", 1000)) return false;
+
+    sprintf(payload, "{\"temperature\": %.3f}", temp);
+    sprintf(ATstring, "AT+HTTPDATA=%d,10000", strlen(payload));  // do i need *any* delay here?
+    if (!_send_confirm(ATstring, "DOWNLOAD", 5000)) return false;
+    millis_delay(1000); // how short can this be?
+    if (!_send_confirm(payload, "OK", 5000)) return false;
+
+    if (!_send_confirm("AT+HTTPACTION=1", "OK", 1000)) return false;
+    if (!_confirm_response("+HTTPACTION: 1,200,0", 2000)) return false;
+
+    if (!_send_confirm("AT+HTTPTERM", "OK", 1000)) return false;
+
+    return true;
+
+}
+
+bool modem_query_bearer(void) {
+
+    // result is stored in MODEM_BUF
+
+    // response:
+    //  +SAPBR: <CID>,<status>,<ip_addr>
+    // where status =
+    //  0 Bearer is connecting
+    //  1 Bearer is connected
+    //  2 Bearer is closing
+    //  3 Bearer is closed
+    // and ip_addr is the address of the *bearer*
+
+    _send_command("AT+SAPBR=2,1");
+    if(!_get_variable_length_response(1000)) return false;
+    if(!_confirm_response("OK", 1000)) return false;
+
+    return true;
+
+}
+
+
 //// static functions
 
 
@@ -391,6 +472,8 @@ static bool _get_data(size_t len, uint64_t timeout) {
 }
 
 static bool _get_variable_length_response(uint64_t timeout) {
+
+    // result is stored in MODEM_BUF
 
     uint8_t byte;
 

@@ -1,10 +1,10 @@
 #ifndef MODEM_H
 #define MODEM_H
 
-#include "ip.h"
-
 #define MODEM_CTO_MS 100 // character timeout in ms
 #define MODEM_BUF_SIZE 512
+
+bool modem_TEST(void);
 
 void modem_setup(void);
 bool modem_init(void);
@@ -26,8 +26,9 @@ char *modem_imei_str(void);
 uint8_t *modem_get_buffer_data(void);
 char *modem_get_buffer_string(void);
 
-//bool modem_set_network_details(void);
-//bool modem_http_post(float);
+bool modem_connect_bearer(void);
+bool modem_post_temperature(float);
+bool modem_query_bearer(void);
 
 bool modem_get_rssi_ber(uint8_t*, uint8_t*);
 

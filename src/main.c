@@ -8,7 +8,6 @@
 #include "thermometer.h"
 #include "modem.h"
 #include "millis.h"
-#include "ip.h"
 
 //
 
@@ -42,7 +41,7 @@ int main(void) {
     modem_setup();
     setbuf(stdout, NULL);   // optional
 
-    printf("\n[STATUS] sciota is risen\n");
+    printf("\n[STATUS] sciota is risen\n\n");
 
 
     // bring up the modem
@@ -66,12 +65,6 @@ int main(void) {
     }
     printf("[STATUS] IMSI: %s\n", modem_get_buffer_string());
 
-    /*
-    while (!modem_set_network_details()) {
-        printf("[ERROR] modem_set_network_details failed\n");
-    }
-    */
-
     while (!modem_get_firmware_version()) {
         printf("[ERROR] modem_get_firmware_version failed\n");
     }
@@ -84,6 +77,8 @@ int main(void) {
 
     float temp;
     uint8_t fun, rssi, ber, reg, mode;  // modem vitals
+
+    bool ip_connected = false;
 
     while (1) {
 
@@ -122,21 +117,23 @@ int main(void) {
             printf("Network System Mode: %d\n", mode);
         }
 
-        // IP stuff
+        // internets
         if ((fun==1) && (reg==5) && (mode==7)) {
 
-            while (!ip_setup1()) {
-                printf("[ERROR] IP setup error \n");
-                millis_delay(1000);
+            if (!ip_connected) {
+                while (!modem_connect_bearer()) {
+                    printf("[ERROR] modem_connect_bearer failed\n");
+                    millis_delay(1000);
+                }
+                printf("Bearer connection established\n");
+                ip_connected = true;
             }
-            printf("IP setup success\n");
 
-            millis_delay(1000);
-
-            if (!ip_send1()) {
-                printf("[ERROR] modem_http_post failed\n");
+            if (!modem_post_temperature(temp)) {
+                printf("[ERROR] modem_post_temperature failed\n");
+                ip_connected = false;
             } else {
-                printf("modem_http_post success\n");
+                printf("HTTP POST succeeded\n");
             }
 
         }
