@@ -2,7 +2,19 @@
 
 microcontroller firmware for the Sciota IoT device
 
+## Dependencies
+* gcc-arm-none-eabi
+* binutils-arm-none-eabi
+* libnewlib-arm-none-eabi
+* openocd
+* libopencm3
+
+
 ## Build + Flash
+
+Make sure that your libopencm3 directory is pointed to by $(OPENCM_DIR) in
+Makefile. Then,
+
 ```
 make
 make flash
